@@ -1,0 +1,58 @@
+{
+  "name": "ScreenShare",
+  "version": "1.0.0",
+  "description": "App feito para ajudar os manos, pois a Janja acabou com eles",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "build:audio-helper": "cmake -S native/audio-capture -B native/audio-capture/build -G \"NMake Makefiles\" -DCMAKE_BUILD_TYPE=Release && cmake --build native/audio-capture/build"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "livekit-client": "^2.5.0",
+    "livekit-server-sdk": "^2.9.0"
+  },
+  "build": {
+    "appId": "com.screenshare.app",
+    "productName": "ScreenShare",
+    "directories": {
+      "output": "dist"
+    },
+    "extraResources": [
+      {
+        "from": "native/audio-capture/build/AudioCapture.exe",
+        "to": "audio-capture/AudioCapture.exe"
+      }
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "artifactName": "ScreenShare.exe"
+    },
+    "portable": {
+      "artifactName": "ScreenShare-Portable-${version}.exe"
+    }
+  }
+}

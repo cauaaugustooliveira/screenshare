@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <title>ScreenShare</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <section id="join" class="panel login-panel">
+
+    <div class="brand-lockup">
+      <span class="brand-mark">SS</span>
+      <div>
+        <h1>ScreenShare</h1>
+        <p>Compartilhe sua tela com a sua sala.</p>
+      </div>
+    </div>
+
+    <label>
+      Seu nome
+
+      <input
+        id="name"
+        placeholder="ex: lucas"
+        autocomplete="off"
+      >
+    </label>
+
+    <label>
+      Código da sala
+
+      <input
+        id="room"
+        placeholder="ex: SALA-ABC123"
+        autocomplete="off"
+      >
+    </label>
+
+    <button id="joinBtn" class="primary-action">
+      Entrar
+    </button>
+
+    <p
+      id="joinErr"
+      class="err"
+    ></p>
+
+  </section>
+
+
+  <section
+    id="room-view"
+    class="hidden"
+  >
+
+    <header class="room-header">
+
+      <div class="room-summary">
+        <span class="brand-mark room-mark">SS</span>
+        <span id="roomLabel"></span>
+      </div>
+
+      <div class="controls">
+
+        <button id="shareBtn">
+          Compartilhar tela
+        </button>
+
+        <span
+          id="shareErr"
+          class="share-err"
+          role="status"
+        ></span>
+
+        <button
+          id="leaveBtn"
+          class="danger"
+        >
+          Sair
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <aside class="participants-panel">
+
+      <div id="participantsTitle" class="participants-header">
+        Pessoas na sala
+      </div>
+
+      <ul id="participantsList"></ul>
+
+    </aside>
+
+
+    <main id="grid"></main>
+
+
+    <!--
+      Continua existindo porque aqui toca
+      o áudio do compartilhamento de tela.
+    -->
+    <div
+      id="audio-sink"
+      class="hidden"
+    ></div>
+
+  </section>
+
+
+  <div
+    id="picker"
+    class="picker hidden"
+  >
+
+    <div class="picker-box">
+
+      <div class="picker-head">
+
+        <h2>
+          Escolha o que compartilhar
+        </h2>
+
+        <button
+          id="pickerCancel"
+          class="ghost"
+        >
+          Cancelar
+        </button>
+
+      </div>
+
+
+      <div class="picker-tabs">
+
+        <button
+          class="tab active"
+          data-tab="screen"
+        >
+          Telas
+        </button>
+
+        <button
+          class="tab"
+          data-tab="window"
+        >
+          Janelas
+        </button>
+
+      </div>
+
+
+      <div class="share-audio-option">
+
+        <label>
+
+          <input
+            type="checkbox"
+            id="shareAudio"
+            checked
+          >
+
+          <span>
+            Compartilhar áudio do sistema
+          </span>
+
+        </label>
+
+      </div>
+
+
+      <div
+        id="pickerList"
+        class="picker-list"
+      ></div>
+
+    </div>
+
+  </div>
+
+
+  <script src="vendor/livekit-client.umd.js"></script>
+  <script src="renderer.js"></script>
+
+</body>
+
+</html>
