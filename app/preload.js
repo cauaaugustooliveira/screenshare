@@ -4,6 +4,21 @@ contextBridge.exposeInMainWorld('telaAPI', {
   generateToken: (room, name) =>
     ipcRenderer.invoke('tela:generate-token', { room, name }),
 
+  createHostedRoom: (roomName, name, mode) =>
+    ipcRenderer.invoke('tela:create-hosted-room', { roomName, name, mode }),
+
+  joinHostedRoom: (invite, name) =>
+    ipcRenderer.invoke('tela:join-hosted-room', { invite, name }),
+
+  stopHostedRoom: () => ipcRenderer.invoke('tela:stop-hosted-room'),
+  getHostStatus: () => ipcRenderer.invoke('tela:get-host-status'),
+
+  onHostStatus: (handler) => {
+    const listener = (_event, status) => handler(status);
+    ipcRenderer.on('tela:host-status', listener);
+    return () => ipcRenderer.removeListener('tela:host-status', listener);
+  },
+
   onPickSource: (handler) => {
     const listener = (_e, sources) => handler(sources);
 

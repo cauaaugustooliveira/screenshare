@@ -9,6 +9,15 @@
 
 <body>
 
+  <div id="startup" class="startup" role="status" aria-live="polite">
+    <span class="startup-mark">SS</span>
+    <div class="startup-copy">
+      <strong>ScreenShare</strong>
+      <span>Carregando…</span>
+    </div>
+    <span class="startup-spinner" aria-hidden="true"></span>
+  </div>
+
   <section id="join" class="panel login-panel">
 
     <div class="brand-lockup">
@@ -19,34 +28,39 @@
       </div>
     </div>
 
-    <label>
-      Seu nome
+    <div id="landingActions" class="landing-actions">
+      <button id="showHostBtn" class="primary-action">Criar uma sala</button>
+      <button id="showJoinBtn" class="secondary-action">Entrar com convite</button>
+    </div>
 
-      <input
-        id="name"
-        placeholder="ex: lucas"
-        autocomplete="off"
-      >
-    </label>
+    <div id="joinForm" class="hidden">
+      <label>Seu nome
+        <input id="name" placeholder="ex: lucas" autocomplete="off">
+      </label>
+      <label>Convite ou código da sala
+        <input id="room" placeholder="Cole o convite TELA1:…" autocomplete="off">
+      </label>
+      <button id="joinBtn" class="primary-action">Entrar</button>
+      <button id="backFromJoin" class="link-action">Voltar</button>
+      <p id="joinErr" class="err"></p>
+    </div>
 
-    <label>
-      Código da sala
-
-      <input
-        id="room"
-        placeholder="ex: SALA-ABC123"
-        autocomplete="off"
-      >
-    </label>
-
-    <button id="joinBtn" class="primary-action">
-      Entrar
-    </button>
-
-    <p
-      id="joinErr"
-      class="err"
-    ></p>
+    <div id="hostForm" class="hidden">
+      <label>Seu nome
+        <input id="hostName" placeholder="ex: lucas" autocomplete="off">
+      </label>
+      <label>Nome da sala
+        <input id="hostRoom" placeholder="ex: sala-do-lucas" autocomplete="off">
+      </label>
+      <div class="host-mode">
+        <button id="hostDirectBtn" class="primary-action">Hospedar pela internet</button>
+        <button id="hostRadminBtn" class="secondary-action">Hospedar pelo Radmin VPN</button>
+      </div>
+      <p class="host-help">A conexão direta usa UPnP quando o roteador permite. Sem TURN, pode falhar em CGNAT ou redes restritas.</p>
+      <p id="hostStatus" class="host-status" role="status"></p>
+      <button id="backFromHost" class="link-action">Voltar</button>
+      <p id="hostErr" class="err"></p>
+    </div>
 
   </section>
 
@@ -68,6 +82,15 @@
         <button id="shareBtn">
           Compartilhar tela
         </button>
+
+        <button id="copyInviteRoomBtn" class="hidden">
+          Copiar convite
+        </button>
+
+        <details id="connectionDetails" class="connection-details hidden">
+          <summary>Detalhes da conexão</summary>
+          <pre id="connectionDetailsContent"></pre>
+        </details>
 
         <span
           id="shareErr"

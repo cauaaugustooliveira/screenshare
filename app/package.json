@@ -13,6 +13,7 @@
     "electron-builder": "^25.1.8"
   },
   "dependencies": {
+    "@achingbrain/nat-port-mapper": "^4.0.5",
     "livekit-client": "^2.5.0",
     "livekit-server-sdk": "^2.9.0"
   },
@@ -26,6 +27,10 @@
       {
         "from": "native/audio-capture/build/AudioCapture.exe",
         "to": "audio-capture/AudioCapture.exe"
+      },
+      {
+        "from": "bin/livekit-server.exe",
+        "to": "livekit/livekit-server.exe"
       }
     ],
     "win": {

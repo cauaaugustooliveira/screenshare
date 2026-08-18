@@ -13,6 +13,52 @@ body {
 
 .hidden { display: none !important; }
 
+.startup {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #313338;
+  color: #f2f3f5;
+}
+
+.startup-mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 9px;
+  background: #5865f2;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.startup-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.startup-copy strong { font-size: 15px; }
+.startup-copy span { color: #b5bac1; font-size: 12px; }
+
+.startup-spinner {
+  width: 17px;
+  height: 17px;
+  margin-left: 4px;
+  border: 2px solid #4e5058;
+  border-top-color: #f2f3f5;
+  border-radius: 50%;
+  animation: startup-spin 0.8s linear infinite;
+}
+
+@keyframes startup-spin {
+  to { transform: rotate(360deg); }
+}
+
 .panel {
   max-width: 420px;
   margin: 60px auto;
@@ -99,6 +145,32 @@ header {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.connection-details {
+  position: relative;
+  max-width: 260px;
+  padding: 7px 9px;
+  border: 1px solid #4e5058;
+  border-radius: 4px;
+  background: #2b2d31;
+  color: #c9cdfb;
+  font-size: 12px;
+}
+
+.connection-details summary {
+  cursor: pointer;
+  color: #c9cdfb;
+  font-weight: 600;
+}
+
+.connection-details pre {
+  max-height: 220px;
+  margin: 10px 0 0;
+  overflow: auto;
+  color: #b5bac1;
+  font: 11px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
 }
 
 .share-err {
@@ -773,6 +845,59 @@ button.danger:hover:not(:disabled) {
   margin-top: 4px;
   font-size: 14px;
 }
+
+.landing-actions,
+.host-mode {
+  display: grid;
+  gap: 10px;
+}
+
+.secondary-action {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 4px;
+  border-color: #4e5058;
+  background: #4e5058;
+  color: #fff;
+  font-size: 14px;
+}
+
+.secondary-action:hover:not(:disabled) {
+  background: #5d6069;
+}
+
+.link-action {
+  width: 100%;
+  margin-top: 12px;
+  padding: 7px;
+  background: transparent;
+  color: #b5bac1;
+  font-weight: 500;
+}
+
+.link-action:hover:not(:disabled) {
+  background: transparent;
+  color: #fff;
+  text-decoration: underline;
+}
+
+.danger-link { color: #ff8c92; }
+
+.host-help {
+  margin: 14px 0 0;
+  color: #949ba4;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.host-status {
+  min-height: 20px;
+  margin: 0 0 16px;
+  color: #c9cdfb;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 
 .room-header {
   min-height: 70px;

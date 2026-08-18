@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { AccessToken } = require('livekit-server-sdk');
+const { HostManager } = require('./services/host-manager');
 
 let credentials = null;
 try {
@@ -17,6 +18,8 @@ try {
 let mainWindow = null;
 let pendingPick = null;
 let audioCapture = null;
+let hostManager = null;
+let quitting = false;
 
 const AUDIO_HEADER_SIZE = 16;
 const AUDIO_MAGIC = 'TLAU';
@@ -40,6 +43,12 @@ function resolveAudioCapturePath() {
   ];
 
   return [packagedPath, ...developmentPaths].find(fs.existsSync) || null;
+}
+
+function resolveLivekitServerPath() {
+  const packagedPath = path.join(process.resourcesPath, 'livekit', 'livekit-server.exe');
+  const developmentPath = path.join(__dirname, 'bin', 'livekit-server.exe');
+  return [packagedPath, developmentPath].find(fs.existsSync) || null;
 }
 
 function appendBuffer(left, right) {
@@ -273,6 +282,29 @@ ipcMain.handle('tela:stop-filtered-audio-capture', async () => {
   return { stopped: true };
 });
 
+ipcMain.handle('tela:create-hosted-room', async (_event, input = {}) => {
+  try {
+    return await hostManager.createHostedRoom({
+      roomName: input.roomName,
+      name: input.name,
+      mode: input.mode,
+    });
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('tela:join-hosted-room', async (_event, input = {}) => {
+  try {
+    return await hostManager.joinHostedRoom({ invite: input.invite, name: input.name });
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('tela:stop-hosted-room', async () => hostManager.stopHostedRoom());
+ipcMain.handle('tela:get-host-status', () => hostManager.getStatus());
+
 ipcMain.handle('tela:generate-token', async (_e, { room, name }) => {
   if (!credentials) {
     return {
@@ -299,11 +331,22 @@ ipcMain.handle('tela:generate-token', async (_e, { room, name }) => {
   }
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  hostManager = new HostManager({
+    electronApp: app,
+    resolveServerPath: resolveLivekitServerPath,
+    onStatus: (status) => sendToRenderer('tela:host-status', status),
+  });
+  createWindow();
+});
 
-app.on('before-quit', () => {
-  // Não deixe um AudioCapture.exe sobreviver ao encerramento do Electron.
-  void stopFilteredAudioCapture();
+app.on('before-quit', (event) => {
+  if (quitting) return;
+  // Aguarda o encerramento dos processos auxiliares e remove as regras UPnP.
+  event.preventDefault();
+  quitting = true;
+  Promise.allSettled([stopFilteredAudioCapture(), hostManager?.stopHostedRoom()])
+    .finally(() => app.quit());
 });
 
 app.on('window-all-closed', () => {

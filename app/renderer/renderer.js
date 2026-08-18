@@ -13,6 +13,10 @@ const state = {
   systemAudio: null,
 
   participantVolumes: new Map(),
+  hosting: false,
+  pendingHostMode: null,
+  hostInvite: '',
+  hostNetwork: null,
 };
 
 const saved = JSON.parse(
@@ -21,8 +25,16 @@ const saved = JSON.parse(
 
 $('name').value = saved.name || '';
 $('room').value = saved.room || '';
+$('hostName').value = saved.name || '';
 
 $('joinBtn').addEventListener('click', join);
+$('showJoinBtn').addEventListener('click', () => showForm('joinForm'));
+$('showHostBtn').addEventListener('click', () => showForm('hostForm'));
+$('backFromJoin').addEventListener('click', showLanding);
+$('backFromHost').addEventListener('click', showLanding);
+$('hostDirectBtn').addEventListener('click', () => createHostedRoom('direct'));
+$('hostRadminBtn').addEventListener('click', () => createHostedRoom('radmin'));
+$('copyInviteRoomBtn').addEventListener('click', () => copyInviteText(state.hostInvite, $('copyInviteRoomBtn')));
 
 $('leaveBtn').addEventListener('click', () => {
   state.room?.disconnect();
@@ -32,6 +44,58 @@ $('shareBtn').addEventListener('click', toggleShare);
 
 setupPicker();
 setupFilteredAudioBridge();
+window.telaAPI?.onHostStatus((status) => updateHostStatus(status));
+
+// Mostra que a janela está preparando o LiveKit e só libera os controles
+// depois que todos os handlers acima foram registrados.
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => $('startup')?.classList.add('hidden'));
+});
+
+function showForm(id) {
+  $('landingActions').classList.add('hidden');
+  $('joinForm').classList.toggle('hidden', id !== 'joinForm');
+  $('hostForm').classList.toggle('hidden', id !== 'hostForm');
+  $('joinErr').textContent = '';
+  $('hostErr').textContent = '';
+}
+
+function showLanding() {
+  $('join').classList.remove('hidden');
+  $('landingActions').classList.remove('hidden');
+  $('joinForm').classList.add('hidden');
+  $('hostForm').classList.add('hidden');
+  $('joinErr').textContent = '';
+  $('hostErr').textContent = '';
+}
+
+function updateHostStatus(status) {
+  state.hostNetwork = status || null;
+  const target = $('hostStatus');
+  if (target && status?.message) target.textContent = status.message;
+  renderConnectionDetails();
+}
+
+function renderConnectionDetails() {
+  const details = $('connectionDetails');
+  const content = $('connectionDetailsContent');
+  const status = state.hostNetwork;
+  if (!details || !content || !status?.running) return;
+  const local = (status.localAddresses || []).map(({ name, address }) => `${name}: ${address}`).join('\n') || 'não detectado';
+  const ipv6 = (status.ipv6Addresses || []).map(({ name, address }) => `${name}: ${address}`).join('\n') || 'não detectado';
+  const mappings = (status.mappings || []).map(({ protocol, port, method }) => `${protocol} ${port}${method ? ` (${method})` : ''}`).join(', ') || 'nenhum';
+  content.textContent = [
+    `Modo: ${status.mode || 'preparando'}`,
+    `Endereço usado: ${status.address || 'preparando'}`,
+    `IPv4 público: ${status.publicIp || 'não detectado'}`,
+    `UPnP: ${status.upnpStatus || 'não iniciado'}${status.upnpError ? ` (${status.upnpError})` : ''}`,
+    `IPv4 local:\n${local}`,
+    `Gateway: ${status.primaryNetwork?.gateway || 'não detectado'}`,
+    `IPv6 global:\n${ipv6}`,
+    `Mapeamentos: ${mappings}`,
+    `Radmin: ${status.radmin?.address || 'não detectado'}`,
+  ].join('\n\n');
+}
 
 function showShareError(message) {
   const element = $('shareErr');
@@ -193,11 +257,11 @@ async function stopSystemAudio({ stopHelper }) {
 
 async function join() {
   const name = $('name').value.trim();
-  const roomName = $('room').value.trim().toUpperCase();
+  const roomInput = $('room').value.trim();
 
   $('joinErr').textContent = '';
 
-  if (!name || !roomName) {
+  if (!name || !roomInput) {
     $('joinErr').textContent = 'Preencha nome e sala.';
     return;
   }
@@ -206,32 +270,89 @@ async function join() {
     'tela:config',
     JSON.stringify({
       name,
-      room: roomName,
+      room: roomInput,
     })
   );
 
-  let token;
-  let url;
-
   try {
-    const result =
-      await window.telaAPI.generateToken(
-        roomName,
-        name
-      );
+    const result = roomInput.startsWith('TELA1:')
+      ? await window.telaAPI.joinHostedRoom(roomInput, name)
+      : await window.telaAPI.generateToken(roomInput.toUpperCase(), name);
 
     if (result.error) {
       throw new Error(result.error);
     }
-
-    ({ token, url } = result);
-
+    await connectToRoom({
+      name,
+      roomName: result.roomName || roomInput.toUpperCase(),
+      token: result.token,
+      url: result.url,
+    });
   } catch (e) {
-    $('joinErr').textContent =
-      e.message;
+    $('joinErr').textContent = e.message;
+  }
+}
 
+async function createHostedRoom(mode) {
+  const name = $('hostName').value.trim();
+  const roomName = $('hostRoom').value.trim();
+  $('hostErr').textContent = '';
+  if (!name || !roomName) {
+    $('hostErr').textContent = 'Preencha nome e sala.';
     return;
   }
+
+  state.pendingHostMode = mode;
+  $('hostDirectBtn').disabled = true;
+  $('hostRadminBtn').disabled = true;
+  $('hostStatus').textContent = 'Preparando a hospedagem local…';
+
+  try {
+    const result = await window.telaAPI.createHostedRoom(roomName, name, mode);
+    if (result.error) throw new Error(result.error);
+    state.hostInvite = result.invite;
+    state.hostNetwork = result;
+    $('copyInviteRoomBtn').classList.remove('hidden');
+    $('connectionDetails').classList.remove('hidden');
+    renderConnectionDetails();
+    $('hostStatus').textContent = result.directProbable
+      ? 'Convite pronto. A conexão direta é provável; um teste externo independente ainda é necessário para confirmar.'
+      : `Convite pronto para ${result.mode === 'radmin' ? 'Radmin VPN' : 'rede local'}.`;
+    localStorage.setItem('tela:config', JSON.stringify({ name, room: roomName }));
+    state.hosting = true;
+    await connectToRoom({ name, roomName: result.roomName, token: result.token, url: result.url });
+  } catch (error) {
+    $('hostErr').textContent = error.message;
+    if (state.hosting) {
+      await window.telaAPI.stopHostedRoom();
+      state.hosting = false;
+    }
+  } finally {
+    $('hostDirectBtn').disabled = false;
+    $('hostRadminBtn').disabled = false;
+  }
+}
+
+async function copyInviteText(invite, button) {
+  if (!invite) return;
+  try {
+    await navigator.clipboard.writeText(invite);
+    button.textContent = 'Convite copiado';
+  } catch (_) {
+    const fallback = document.createElement('textarea');
+    fallback.value = invite;
+    fallback.style.position = 'fixed';
+    fallback.style.opacity = '0';
+    document.body.appendChild(fallback);
+    fallback.select();
+    document.execCommand('copy');
+    fallback.remove();
+    button.textContent = 'Convite copiado';
+  }
+  setTimeout(() => { button.textContent = 'Copiar convite'; }, 1600);
+}
+
+async function connectToRoom({ name, roomName, token, url }) {
 
   const room = new Room({
     adaptiveStream: true,
@@ -285,12 +406,8 @@ async function join() {
     );
 
   } catch (e) {
-    $('joinErr').textContent =
-      `Erro ao conectar: ${e.message}`;
-
     state.room = null;
-
-    return;
+    throw new Error(`Erro ao conectar: ${e.message}`);
   }
 
   updateParticipantsList();
@@ -1478,6 +1595,10 @@ function cancelPicker() {
 ========================================================= */
 
 function onDisconnected() {
+  if (state.hosting) {
+    state.hosting = false;
+    void window.telaAPI.stopHostedRoom();
+  }
   void stopSystemAudio({ stopHelper: true });
   grid.innerHTML =
     '';
@@ -1505,6 +1626,11 @@ function onDisconnected() {
   state.screenSharing =
     false;
 
+  state.hostInvite = '';
+  state.hostNetwork = null;
+  $('copyInviteRoomBtn').classList.add('hidden');
+  $('connectionDetails').classList.add('hidden');
+
   state.shareAudio =
     true;
 
@@ -1521,7 +1647,5 @@ function onDisconnected() {
     .classList
     .add('hidden');
 
-  $('join')
-    .classList
-    .remove('hidden');
+  showLanding();
 }

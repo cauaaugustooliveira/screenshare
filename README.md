@@ -1,5 +1,35 @@
 # Tela
 
+> O app agora também possui modo local/self-hosted: quem cria a sala executa um LiveKit temporário no próprio PC, sem usar minutos do LiveKit Cloud. As instruções antigas de LiveKit Cloud abaixo continuam apenas como modo legado.
+
+## Hospedagem local (ScreenShare)
+
+Este é o modo indicado para usar o app sem uma conta ou cota do LiveKit Cloud.
+
+1. Baixe o arquivo Windows `livekit-server.exe` na página oficial de [releases do LiveKit](https://github.com/livekit/livekit/releases).
+2. Coloque o arquivo exatamente em `app\bin\livekit-server.exe`.
+3. Na pasta `app`, execute `npm install` e depois `npm run dist`.
+
+O instalador/portável gerado leva o servidor junto. Ao abrir o ScreenShare:
+
+- **Criar uma sala → Hospedar pela internet**: tenta criar regras UPnP para as portas 7880–7883 e obtém o IP externo pelo próprio roteador. O app só indica “conexão direta provável” quando há uma rota compatível; CGNAT e firewall do provedor ainda podem impedir IPv4 externo.
+- **Criar uma sala → Hospedar pelo Radmin VPN**: funciona pela rede virtual Radmin quando a interface Radmin/Famatech com IP `26.x.x.x` está ativa. Não instala nem distribui o Radmin VPN.
+- **Entrar com convite**: cole o código `TELA1:…` que o anfitrião copiou. O convite contém uma chave temporária de entrada, nunca a chave secreta do LiveKit.
+
+O servidor local, os tokens e as regras UPnP são temporários. Ao encerrar a sala ou fechar o app, o processo é finalizado, as regras criadas pelo app são removidas e a configuração temporária é apagada.
+
+Na primeira hospedagem direta, o Windows pedirá confirmação de administrador para liberar automaticamente no Firewall as portas TCP 7880, 7881 e 7883, além da UDP 7882. As quatro regras são separadas, limitadas a essas portas e ficam salvas para as próximas salas.
+
+O módulo NAT-PMP permanece isolado para uma próxima etapa; o fluxo básico não depende dele. A área **Detalhes da conexão**, dentro da sala hospedada, mostra os endereços locais, IPv6 global detectado, IP público, método de mapeamento e Radmin detectado. IPv6 é usado somente quando o Windows informa um endereço global preferido; o convidado também precisa ter conectividade IPv6.
+
+### Limites importantes
+
+- Sem TURN/relay, algumas redes não conseguem conexão direta — especialmente CGNAT, rede corporativa, universidade e operadoras móveis.
+- UPnP não prova que alguém de fora conseguiu conectar. Para testar de verdade, é preciso outra rede/dispositivo ou um verificador externo independente.
+- O convite/token via internet direta usa HTTP porque esta configuração não inclui certificado TLS. Use o modo direto somente com pessoas de confiança; Radmin VPN é a alternativa recomendada quando não houver abertura de porta.
+
+---
+
 App de compartilhamento de tela em grupo. Voce e seus amigos entram numa "sala" digitando o mesmo codigo e podem compartilhar tela ao mesmo tempo — tipo o Discord fazia antes de bloquearem no Brasil. Funciona em Windows.
 
 A ideia é continuar usando Discord para voz e jogar, mas quando alguem quiser compartilhar a tela só entrar em uma sala junto no aplicativo. 
